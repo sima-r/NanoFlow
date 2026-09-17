@@ -1,0 +1,79 @@
+Bootstrap: docker
+From: python:3.11-slim
+
+%labels
+    Author Wouter De Coster
+    Application NanoPlot
+    Version 1.48.0
+    Description NanoPlot long-read sequencing QC
+    Maintainer Sima Rahimi <sima.rahimi@med.lu.se>
+
+%environment
+    export PATH=/opt/venv/bin:$PATH
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+
+%post
+    set -e
+
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        git \
+        ca-certificates \
+        libfreetype6 \
+        libpng16-16
+
+    rm -rf /var/lib/apt/lists/*
+
+    # Isolated Python environment
+    python3 -m venv /opt/venv
+
+    /opt/venv/bin/pip install --no-cache-dir --upgrade \
+        pip \
+        setuptools \
+        wheel
+
+    # Install exact NanoPlot release
+    /opt/venv/bin/pip install --no-cache-dir \
+        "NanoPlot==1.48.0"
+
+%test
+    echo "Testing NanoPlot..."
+
+    /opt/venv/bin/NanoPlot --version
+
+    /opt/venv/bin/python -c "import nanoplot"
+    /opt/venv/bin/python -c "import pandas"
+    /opt/venv/bin/python -c "import numpy"
+    /opt/venv/bin/python -c "import scipy"
+    /opt/venv/bin/python -c "import pysam"
+    /opt/venv/bin/python -c "import Bio"
+    /opt/venv/bin/python -c "import nanoget"
+    /opt/venv/bin/python -c "import plotly"
+    /opt/venv/bin/python -c "import pyarrow"
+    /opt/venv/bin/python -c "import kaleido"
+
+    echo "NanoPlot installation OK."
+
+%runscript
+    exec /opt/venv/bin/NanoPlot "$@"
+
+%help
+    NanoPlot 1.48.0
+
+    Long-read sequencing QC and plotting.
+
+    Example:
+
+      apptainer run nanoplot.sif \
+          --fastq reads.fastq.gz \
+          --outdir nanoplot_results
+
+    Or:
+
+      apptainer exec nanoplot.sif NanoPlot \
+          --fastq reads.fastq.gz \
+          --outdir nanoplot_results
